@@ -1,7 +1,9 @@
 import discord
 import pyplayhd
-from discord.commands.context import ApplicationContext
+
 from discord.ext import commands
+
+from utils.bot_contexts import BotApplicationContext
 
 class Global(commands.Cog):
     def __init__(self, bot):
@@ -12,7 +14,8 @@ class Global(commands.Cog):
         await ctx.respond("World")
 
     @discord.slash_command()
-    async def modes(self, ctx: ApplicationContext):
+    async def modes(self, ctx: BotApplicationContext):
+        print(ctx.member_data)
         await ctx.defer()
         mcplayhd: pyplayhd.Client = self.bot.mcplayhd
         await ctx.respond(str(mcplayhd.fastbuilder.modes))

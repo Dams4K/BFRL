@@ -3,6 +3,7 @@ import discord
 import pyplayhd
 
 from utils.references import References
+from utils.bot_contexts import BotApplicationContext
 
 class BFRL(discord.Bot):
     def __init__(self):
@@ -13,6 +14,9 @@ class BFRL(discord.Bot):
         os.system("clear||cls")
         print(self.user, "is ready!")
         print("py-cord version:", discord.__version__)
+
+    async def get_application_context(self, interaction, cls = BotApplicationContext):
+        return await super().get_application_context(interaction, cls=cls)
 
     def load_cogs(self, path: str):
         cogs = self.get_cogs(path)

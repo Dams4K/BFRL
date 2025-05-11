@@ -16,5 +16,9 @@ class UpdateStats(commands.Cog):
     async def update(self):
         print(self.mcplayhd.fastbuilder.modes)
 
+    @update.before_loop
+    async def before_update(self):
+        await self.bot.wait_until_ready()
+
 def setup(bot):
     bot.add_cog(UpdateStats(bot))

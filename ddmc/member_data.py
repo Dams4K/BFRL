@@ -1,5 +1,4 @@
 from ddm import *
-from enum import member
 from utils.references import References
 
 class MemberData(Saveable):

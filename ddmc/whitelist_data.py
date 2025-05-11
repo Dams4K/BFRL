@@ -16,5 +16,15 @@ class WhitelistData(Saveable):
         self.listed.append(member_id)
 
     @Saveable.update()
-    def remove(self, member_id: int):
-        self.listed.remove(member_id)
+    def remove(self, member_id: int) -> bool:
+        try:
+            self.listed.remove(member_id)
+            return True
+        except ValueError:
+            return False
+    
+    def remove_uuid(self, uuid: str) -> bool:
+        try:
+            return self.remove(self.listed.index(uuid))
+        except ValueError:
+            return False

@@ -30,6 +30,30 @@ class Whitelist(commands.Cog):
         ctx.whitelist_data.add(member.id)
 
         await ctx.respond(f"{member.display_name} is now whitelisted")
+    
+    @whitelist.command(name="remove")
+    async def whitelist_remove(self, ctx: BotApplicationContext, member: discord.Member = None, name: str = "") -> None:
+        if member is None and name == "":
+            await ctx.respond("Argument missing!")
+            return
+
+        if member:
+            if ctx.whitelist_data.remove(member.id):
+                await ctx.respond(f"{member.display_name} removed from the whitelist")
+                return
+            await ctx.respond(f"{member.display_name} is not in the whitelist")
+            return
+        
+        uuid = get_uuid(name)
+        if uuid == "":
+            await ctx.respond("Incorrect name")
+            return
+
+        if ctx.whitelist_data.remove_uuid(uuid):
+            await ctx.respond(f"{name} removed from the whitelist")
+            return
+        await ctx.respond("ERR")
+        
 
 
 def setup(bot):

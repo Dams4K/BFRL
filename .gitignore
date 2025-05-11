@@ -1,0 +1,4 @@
+datas/*
+.venv/*
+.ropeproject/*
+**/__pycache__/**

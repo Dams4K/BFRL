@@ -1,0 +1,12 @@
+[
+  {
+    "label": "Run bot",
+    "command": "python run.py",
+    "reveal": "always"
+  },
+  {
+    "label": "Run file",
+    "command": "python $ZED_FILE",
+    "reveal": "always"
+  }
+]

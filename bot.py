@@ -1,12 +1,13 @@
 import os
-
 import discord
+import pyplayhd
 
 from utils.references import References
 
 class BFRL(discord.Bot):
     def __init__(self):
         super().__init__(debug_guilds=References.DEBUG_GUILDS)
+        self.mcplayhd: pyplayhd.Client = pyplayhd.Client("qsd")
 
     async def on_ready(self):
         os.system("clear||cls")

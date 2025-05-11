@@ -1,0 +1,6 @@
+[submodule "PyPlayHD"]
+	path = PyPlayHD
+	url = https://github.com/Dams4K/PyPlayHD.git
+[submodule "ddm"]
+	path = ddm
+	url = https://github.com/Dams4K/DiscordDataManager.git

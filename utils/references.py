@@ -7,7 +7,9 @@ default_config = {
   "token": "",
   "folders": {
     "cogs": "cogs/",
-    "logs": "logs/"
+    "logs": "logs/",
+    "datas": "datas/",
+    "guilds": "guilds/"
   },
   "debug": {
       "guilds": []
@@ -29,8 +31,12 @@ class _References:
                 self.config = json.load(cfg)
 
         self.TOKEN = self.config["token"]
+
         self.FOLDER_COGS = self.config["folders"]["cogs"]
         self.FOLDER_LOGS = self.config["folders"]["logs"]
+        self.FOLDER_DATAS = self.config["folders"]["datas"]
+        self.FOLDER_GUILDS = self.config["folders"]["guilds"]
+
         self.DEBUG_GUILDS = self.config["debug"]["guilds"]
 
     def create_config(self):
@@ -52,5 +58,8 @@ class _References:
                 elif new_value := input(f"{key} ({value}) > ") != "":
                     config[key] = new_value
         return config
+
+    def guild_folder(self, guild_id: int, *end) -> str:
+        return os.path.join(self.FOLDER_DATAS, self.FOLDER_GUILDS, str(guild_id), *end)
 
 References = _References()

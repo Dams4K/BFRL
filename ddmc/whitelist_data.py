@@ -25,6 +25,8 @@ class WhitelistData(Saveable):
     
     def remove_uuid(self, uuid: str) -> bool:
         try:
-            return self.remove(self.listed.index(uuid))
+            #TODO: make this work
+            # return self.remove(self.listed.index(uuid))
+            return False
         except ValueError:
             return False

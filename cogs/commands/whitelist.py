@@ -7,7 +7,7 @@ from utils.bot_contexts import BotApplicationContext
 from utils.checks import is_administrator
 
 from mcapi.player import get_uuid
-from ddmc import MemberData
+from ddmc import MemberData, WhitelistData
 
 class Whitelist(commands.Cog):
     def __init__(self, bot):
@@ -33,26 +33,39 @@ class Whitelist(commands.Cog):
     
     @whitelist.command(name="remove")
     async def whitelist_remove(self, ctx: BotApplicationContext, member: discord.Member = None, name: str = "") -> None:
-        if member is None and name == "":
-            await ctx.respond("Argument missing!")
+        if await self.wl_remove_member(ctx, member):
             return
-
-        if member:
-            if ctx.whitelist_data.remove(member.id):
-                await ctx.respond(f"{member.display_name} removed from the whitelist")
-                return
-            await ctx.respond(f"{member.display_name} is not in the whitelist")
+        elif await self.wl_remove_name(ctx, name):
             return
         
+        await ctx.respond("Argument missing!")
+    
+    async def wl_remove_member(self, ctx: BotApplicationContext, member: discord.Member) -> bool:
+        if member is None:
+            return False
+        
+        if ctx.whitelist_data.remove(member.id):
+            await ctx.respond(f"{member.display_name} removed from the whitelist")
+        else:
+            await ctx.respond(f"{member.display_name} is not in the whitelist")
+
+        return True
+    
+    async def wl_remove_name(self, ctx: BotApplicationContext, name: str) -> bool:
+        if name == "":
+            return False
+
         uuid = get_uuid(name)
         if uuid == "":
             await ctx.respond("Incorrect name")
-            return
-
+            return True
+        
         if ctx.whitelist_data.remove_uuid(uuid):
             await ctx.respond(f"{name} removed from the whitelist")
-            return
-        await ctx.respond("ERR")
+        else:
+            await ctx.respond(f"{name} is not in the whitelist")
+
+        return True
         
 
 

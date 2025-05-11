@@ -4,9 +4,9 @@ from utils.references import References
 class MemberData(Saveable):
     __slots__ = ("_guild_id", "_member_id", "uuid")
 
-    def __init__(self, member_id, guild_id):
-        self._member_id = member_id
+    def __init__(self, guild_id, member_id):
         self._guild_id = guild_id
+        self._member_id = member_id
 
         self.uuid = ""
 

@@ -4,7 +4,8 @@ import os
 BOT_CONFIG_PATH = "datas/bot.json"
 
 default_config = {
-  "token": "",
+  "discord_token": "",
+  "mcplayhd_token": "",
   "folders": {
     "cogs": "cogs/",
     "logs": "logs/",
@@ -30,7 +31,8 @@ class _References:
             with open(BOT_CONFIG_PATH, "r") as cfg:
                 self.config = json.load(cfg)
 
-        self.TOKEN = self.config["token"]
+        self.DISCORD_TOKEN = self.config["discord_token"]
+        self.MCPLAYHD_TOKEN = self.config["mcplayhd_token"]
 
         self.FOLDER_COGS = self.config["folders"]["cogs"]
         self.FOLDER_LOGS = self.config["folders"]["logs"]

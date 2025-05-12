@@ -8,7 +8,7 @@ from utils.bot_contexts import BotApplicationContext
 class BFRL(discord.Bot):
     def __init__(self):
         super().__init__(debug_guilds=References.DEBUG_GUILDS)
-        self.mcplayhd: pyplayhd.Client = pyplayhd.Client("qsd")
+        self.mcplayhd: pyplayhd.Client = pyplayhd.Client(References.MCPLAYHD_TOKEN)
 
     async def on_ready(self):
         os.system("clear||cls")

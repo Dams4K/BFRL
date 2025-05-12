@@ -14,7 +14,8 @@ class UpdateStats(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def update(self):
-        print(self.mcplayhd.fastbuilder.modes)
+        # print(self.mcplayhd.fastbuilder.modes)
+        pass
 
     @update.before_loop
     async def before_update(self):

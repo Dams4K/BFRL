@@ -4,4 +4,4 @@ from utils.references import References
 
 bot = BFRL()
 bot.load_cogs(References.FOLDER_COGS)
-bot.run(References.TOKEN)
+bot.run(References.DISCORD_TOKEN)

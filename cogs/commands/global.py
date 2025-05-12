@@ -4,12 +4,15 @@ import pyplayhd
 from discord.ext import commands
 
 from utils.bot_contexts import BotApplicationContext
+from utils.date import display_time
+from utils.autocompletes import ModeOption
 
 from mcapi.player import get_uuid
 
 class Global(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.mcplayhd: pyplayhd.Client = self.bot.mcplayhd
 
     @discord.slash_command()
     async def hello(self, ctx):
@@ -17,10 +20,25 @@ class Global(commands.Cog):
 
     @discord.slash_command()
     async def modes(self, ctx: BotApplicationContext):
-        print(ctx.member_data)
         await ctx.defer()
-        mcplayhd: pyplayhd.Client = self.bot.mcplayhd
-        await ctx.respond(str(mcplayhd.fastbuilder.modes))
+        await ctx.respond(str(self.mcplayhd.fastbuilder.modes))
+
+    @discord.slash_command()
+    async def stats(self, ctx: BotApplicationContext, name: str):
+        await ctx.defer()
+        await ctx.respond(self.mcplayhd.fastbuilder.mode_player_stats(pyplayhd.Mode.SHORT, name))
+
+    @discord.slash_command()
+    async def time(self, ctx: BotApplicationContext, mode: discord.Option(ModeOption, choices=pyplayhd.Mode.values()), name: str = ""):
+        player_name = name or ctx.member_data.uuid
+        if player_name == "":
+            await ctx.respond("You need to specify a player")
+            return
+        
+        builder_player: pyplayhd.BuilderPlayer = self.mcplayhd.fastbuilder.mode_player_stats(mode, player_name)
+        stats: pyplayhd.BuilderStats = builder_player.builder_stats
+        
+        await ctx.respond(display_time(stats.time_total//1000))
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):

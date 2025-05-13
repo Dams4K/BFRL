@@ -1,6 +1,8 @@
 from ddm import *
 from utils.references import References
 
+from mcapi.player import get_name
+
 class MemberData(Saveable):
     __slots__ = ("_guild_id", "_member_id", "uuid")
 
@@ -15,3 +17,7 @@ class MemberData(Saveable):
     @Saveable.update()
     def set_uuid(self, value: str):
         self.uuid = value
+    
+    @property
+    def player_name(self) -> str:
+        return get_name(self.uuid)

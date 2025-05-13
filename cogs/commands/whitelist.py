@@ -70,7 +70,7 @@ class Whitelist(commands.Cog):
     
     @whitelist.command(name="channel")
     async def whitelist_channel(self, ctx: BotApplicationContext, channel: discord.TextChannel):
-        ctx.guild_config.whitelist_channel = channel.id
+        ctx.guild_config.set_whitelist_channel(channel.id)
         await ctx.respond(f"New self-whitelist is now {channel.mention}")
 
 

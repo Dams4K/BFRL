@@ -52,6 +52,9 @@ class Global(commands.Cog):
         md.set_uuid(get_uuid(name))
         await ctx.respond(f"Your discord account is linked to the minecraft account named {name}")
 
+        ctx.whitelist_data.remove(ctx.author.id)
+        await ctx.guild_config.send_whitelist_verification(md)
+
 
 def setup(bot):
     bot.add_cog(Global(bot))

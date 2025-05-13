@@ -7,20 +7,20 @@ class WhitelistData(Saveable):
     def __init__(self, guild_id):
         self._guild_id = guild_id
         
-        self.listed = []
+        self.listed: set = set()
 
         super().__init__(References.guild_folder(self._guild_id, f"whitelist.json"))
     
     @Saveable.update()
     def add(self, member_id: int):
-        self.listed.append(member_id)
+        self.listed.add(member_id)
 
     @Saveable.update()
     def remove(self, member_id: int) -> bool:
         try:
             self.listed.remove(member_id)
             return True
-        except ValueError:
+        except (ValueError, KeyError):
             return False
     
     def remove_uuid(self, uuid: str) -> bool:
@@ -28,5 +28,5 @@ class WhitelistData(Saveable):
             #TODO: make this work
             # return self.remove(self.listed.index(uuid))
             return False
-        except ValueError:
+        except (ValueError, KeyError):
             return False

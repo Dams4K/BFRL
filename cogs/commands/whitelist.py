@@ -7,7 +7,7 @@ from utils.bot_contexts import BotApplicationContext
 from utils.checks import is_administrator
 
 from mcapi.player import get_uuid
-from ddmc import MemberData, WhitelistData
+from ddmc import *
 
 class Whitelist(commands.Cog):
     def __init__(self, bot):
@@ -30,6 +30,10 @@ class Whitelist(commands.Cog):
         ctx.whitelist_data.add(member.id)
 
         await ctx.respond(f"{member.display_name} is now whitelisted")
+
+        pl = BuilderPlayerData(ctx.guild.id, uuid)
+        pl.save()
+
     
     @whitelist.command(name="remove")
     async def whitelist_remove(self, ctx: BotApplicationContext, member: discord.Member = None, name: str = "") -> None:

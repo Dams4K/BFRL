@@ -9,6 +9,8 @@ from utils.autocompletes import ModeOption
 
 from mcapi.player import get_uuid
 
+from ddmc import BuilderPlayerData, BuilderStatsData
+
 class Global(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -30,17 +32,23 @@ class Global(commands.Cog):
 
     @discord.slash_command()
     async def time(self, ctx: BotApplicationContext, mode: discord.Option(ModeOption, choices=pyplayhd.Mode.values()), name: str = ""):
-        player_name = name or ctx.member_data.uuid
-        if player_name == "":
+        player_uuid = get_uuid(name) or ctx.member_data.uuid
+        if player_uuid == "":
             await ctx.respond("You need to specify a player")
             return
         
-        builder_player: pyplayhd.BuilderPlayer = self.mcplayhd.fastbuilder.mode_player_stats(mode, player_name)
-        stats: pyplayhd.BuilderStats = builder_player.builder_stats
         
-        await ctx.respond(display_time(stats.time_total//1000))
+        bpd = BuilderPlayerData(player_uuid)
 
-        print(self.mcplayhd.fastbuilder.api_info())
+        if not bpd.file_exist:
+            await ctx.respond("No information about this player available for now")
+            return
+        
+        if stats := getattr(bpd, str(mode), None):    
+            await ctx.respond(display_time(stats.time_total//1000))
+            return
+        
+        await ctx.respond("ERR")
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):

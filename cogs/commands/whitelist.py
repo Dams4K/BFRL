@@ -25,7 +25,7 @@ class Whitelist(commands.Cog):
             await ctx.respond("Incorrect minecraft name")
             return
 
-        md = MemberData(ctx.guild.id, member.id)
+        md = MemberData(self._bot, ctx.guild.id, member.id)
         md.set_uuid(uuid)
         ctx.whitelist_data.add(member.id)
 

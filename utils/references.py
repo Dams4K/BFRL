@@ -61,7 +61,10 @@ class _References:
                     config[key] = new_value
         return config
 
+    def guilds_folder(self) -> str:
+        return os.path.join(self.FOLDER_DATAS, self.FOLDER_GUILDS)
+
     def guild_folder(self, guild_id: int, *end) -> str:
-        return os.path.join(self.FOLDER_DATAS, self.FOLDER_GUILDS, str(guild_id), *end)
+        return os.path.join(self.guilds_folder(), str(guild_id), *end)
 
 References = _References()

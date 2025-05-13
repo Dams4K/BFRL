@@ -1,5 +1,9 @@
+import os
+
 from ddm import *
+
 from utils.references import References
+from utils.date import next_time
 
 from .member_data import MemberData
 
@@ -7,36 +11,38 @@ from pyplayhd import *
 
 class BuilderPlayerData(Saveable):
     __slots__ = (
-        "_guild_id", "_uuid", "did",
-        "normal",
-        "short", "extra_short",
-        "inclined", "inclined_short",
+        "_uuid",
+        "normal", "long",
+        "short", "extrashort",
+        "inclined", "inclinedshort",
         "onestack"
     )
 
-    def __init__(self, guild_id, uuid):
-        self._guild_id = guild_id
+    def __init__(self, uuid):
         self._uuid = uuid
 
         self.normal = BuilderStatsData(Mode.NORMAL)
+        self.long = BuilderStatsData(Mode.LONG)
         self.short = BuilderStatsData(Mode.SHORT)
-        self.extra_short = BuilderStatsData(Mode.EXTRASHORT)
+        self.extrashort = BuilderStatsData(Mode.EXTRASHORT)
         self.inclined = BuilderStatsData(Mode.INCLINED)
-        self.inclined_short = BuilderStatsData(Mode.INCLINEDSHORT)
+        self.inclinedshort = BuilderStatsData(Mode.INCLINEDSHORT)
         self.onestack = BuilderStatsData(Mode.ONESTACK)
 
-        self.did = -1
-
-        super().__init__(References.guild_folder(self._guild_id, f"players/{self._uuid}.json"))
+        super().__init__(os.path.join(References.FOLDER_DATAS, f"players/{self._uuid}.json"))
     
-    def has_discord_account(self) -> bool:
-        return self.did >= 0
-    
-    def get_member_data(self) -> MemberData | None:
-        if not self.has_discord_account():
-            return None
+    @Saveable.update
+    def update(self) -> int:
+        self.normal.update(self._uuid)
+        self.long.update(self._uuid)
+        self.short.update(self._uuid)
+        self.extrashort.update(self._uuid)
+        self.inclined.update(self._uuid)
+        self.inclinedshort.update(self._uuid)
+        self.onestack.update(self._uuid)
 
-        return MemberData(self._guild_id, self.did)
+        return next_time(self.short.time_best)
+        
 
 class BuilderStatsData(Data, BuilderStats):
     __slots__ = ("_mode", "time_best", "time_total")
@@ -45,4 +51,13 @@ class BuilderStatsData(Data, BuilderStats):
     def __init__(self, mode: Mode, *args, **kwargs):
         self._mode = mode
 
+        self.time_best = -1
+        self.time_total = -1
+
         super().__init__(*args, **kwargs)
+
+    def update(self, uuid: str):
+        mcplayhd = Client(References.MCPLAYHD_TOKEN)
+        if builder_player := mcplayhd.fastbuilder.mode_player_stats(self._mode, uuid):
+            self.time_best = builder_player.builder_stats.time_best
+            self.time_total = builder_player.builder_stats.time_total

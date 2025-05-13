@@ -67,7 +67,11 @@ class Whitelist(commands.Cog):
             await ctx.respond(f"{name} is not in the whitelist")
 
         return True
-        
+    
+    @whitelist.command(name="channel")
+    async def whitelist_channel(self, ctx: BotApplicationContext, channel: discord.TextChannel):
+        ctx.guild_config.whitelist_channel = channel.id
+        await ctx.respond(f"New self-whitelist is now {channel.mention}")
 
 
 def setup(bot):

@@ -31,9 +31,6 @@ class Whitelist(commands.Cog):
 
         await ctx.respond(f"{member.display_name} is now whitelisted")
 
-        pl = BuilderPlayerData(ctx.guild.id, uuid)
-        pl.save()
-
     
     @whitelist.command(name="remove")
     async def whitelist_remove(self, ctx: BotApplicationContext, member: discord.Member = None, name: str = "") -> None:

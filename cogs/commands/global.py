@@ -40,6 +40,8 @@ class Global(commands.Cog):
         
         await ctx.respond(display_time(stats.time_total//1000))
 
+        print(self.mcplayhd.fastbuilder.api_info())
+
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):
         md = ctx.member_data

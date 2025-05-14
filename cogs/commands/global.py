@@ -26,10 +26,12 @@ class Global(commands.Cog):
             return
         
         score = Score.of_uuid(player_uuid, mode)
-        if score.time_total is None:
+        if score.time_total is None or score.time_total == 0:
             await ctx.respond("No information about this player available for now")
             return
-        await ctx.respond(display_time(score.time_total//1000))
+        
+        calculated_time = display_time(score.time_total//1000)
+        await ctx.respond(calculated_time)
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):
@@ -40,7 +42,6 @@ class Global(commands.Cog):
         await ctx.respond(f"Your discord account is linked to the minecraft account named {name}")
 
         await self.send_whitelist_verification(ctx.dguild, ctx.dmember)
-        # await ctx.guild_config.send_whitelist_verification(dm)
     
     async def send_whitelist_verification(self, dguild: Guild, dmember: Member):        
         member: discord.Member = await dmember.fetch_user(self.bot)

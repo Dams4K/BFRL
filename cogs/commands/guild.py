@@ -1,11 +1,12 @@
-import discord
+# import discord
 
-from discord.ext import commands
+# from discord.ext import commands
 
-class Guild(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+# class Guild(commands.Cog):
+#     def __init__(self, bot):
+#         self.bot = bot
 
 
 def setup(bot):
-    bot.add_cog(Guild(bot))
+    pass
+#     bot.add_cog(Guild(bot))

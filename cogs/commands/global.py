@@ -9,7 +9,7 @@ from utils.autocompletes import ModeOption
 
 from mcapi.player import get_uuid
 
-from ddmc import BuilderPlayerData, BuilderStatsData
+from db import *
 
 class Global(commands.Cog):
     def __init__(self, bot):
@@ -37,18 +37,12 @@ class Global(commands.Cog):
             await ctx.respond("You need to specify a player")
             return
         
+        score = Score.of_uuid(player_uuid, mode)
         
-        bpd = BuilderPlayerData(self.bot, player_uuid)
-
-        if not bpd.file_exist:
+        if score.time_best is None:
             await ctx.respond("No information about this player available for now")
             return
-        
-        if stats := getattr(bpd, str(mode), None):    
-            await ctx.respond(display_time(stats.time_total//1000))
-            return
-        
-        await ctx.respond("ERR")
+        await ctx.respond(display_time(score.time_total//1000))
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):

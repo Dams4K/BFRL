@@ -6,6 +6,8 @@ from discord.ext import commands
 from utils.bot_contexts import BotApplicationContext
 from utils.date import display_time
 from utils.autocompletes import ModeOption
+from utils.bot_embeds import *
+from utils.view import WhitelistConfirmation
 
 from mcapi.player import get_uuid
 
@@ -17,46 +19,39 @@ class Global(commands.Cog):
         self.mcplayhd: pyplayhd.Client = self.bot.mcplayhd
 
     @discord.slash_command()
-    async def hello(self, ctx):
-        await ctx.respond("World")
-
-    @discord.slash_command()
-    async def modes(self, ctx: BotApplicationContext):
-        await ctx.defer()
-        await ctx.respond(str(self.mcplayhd.fastbuilder.modes))
-
-    @discord.slash_command()
-    async def stats(self, ctx: BotApplicationContext, name: str):
-        await ctx.defer()
-        await ctx.respond(self.mcplayhd.fastbuilder.mode_player_stats(pyplayhd.Mode.SHORT, name))
-
-    @discord.slash_command()
     async def time(self, ctx: BotApplicationContext, mode: discord.Option(ModeOption, choices=pyplayhd.Mode.values()), name: str = ""):
-        player_uuid = get_uuid(name) or ctx.member_data.uuid
+        player_uuid = get_uuid(name) or ctx.dmember.uuid
         if player_uuid == "":
             await ctx.respond("You need to specify a player")
             return
         
         score = Score.of_uuid(player_uuid, mode)
-        
-        if score.time_best is None:
+        if score.time_total is None:
             await ctx.respond("No information about this player available for now")
             return
         await ctx.respond(display_time(score.time_total//1000))
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):
-        md = ctx.member_data
-        if md is None:
-            await ctx.respond("Error")
-            return
+        dm = ctx.dmember
+        dm.unlist()
+        dm.set_uuid(get_uuid(name))
 
-        md.set_uuid(get_uuid(name))
         await ctx.respond(f"Your discord account is linked to the minecraft account named {name}")
 
-        ctx.whitelist_data.remove(ctx.author.id)
-        await ctx.guild_config.send_whitelist_verification(md)
+        await self.send_whitelist_verification(ctx.dguild, ctx.dmember)
+        # await ctx.guild_config.send_whitelist_verification(dm)
+    
+    async def send_whitelist_verification(self, dguild: Guild, dmember: Member):        
+        member: discord.Member = await dmember.fetch_user(self.bot)
+        channel: discord.TextChannel = await dguild.fetch_whitelist_channel(self.bot)
+        if channel is None:
+            return
 
+        embed = InformativeEmbed(title="Whitelist request", description=f"{member.mention} has linked his discord account to `{dmember.get_name()}`")
+        embed.set_footer(text=str(member.id))
+
+        await channel.send(embed=embed, view=WhitelistConfirmation())
 
 def setup(bot):
     bot.add_cog(Global(bot))

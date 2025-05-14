@@ -1,5 +1,7 @@
 import discord
 
+from db import *
+
 class WhitelistConfirmation(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
@@ -13,8 +15,8 @@ class WhitelistConfirmation(discord.ui.View):
         
         embed: discord.Embed = embeds[0]
         member_id = int(embed.footer.text)
-        wl = WhitelistData(interaction.guild.id)
-        wl.add(member_id)
+        
+        Whitelist.whitelist(interaction.guild.id, member_id)
 
         await interaction.message.delete()
         await interaction.response.send_message("Member added to the whitelist", ephemeral=True)

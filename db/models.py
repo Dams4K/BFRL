@@ -1,3 +1,5 @@
+import discord
+
 from typing import Optional
 
 from sqlalchemy import String
@@ -11,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from .db import engine, session
 
 from pyplayhd import Mode
+from mcapi.player import get_name
 
 class Base(DeclarativeBase):
     @classmethod
@@ -20,6 +23,17 @@ class Base(DeclarativeBase):
             session.commit()
         except IntegrityError:
             session.rollback()
+    
+    @classmethod
+    def delete(cls, obj):
+        if obj is None:
+            return
+        try:
+            session.delete(obj)
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+
 
 class Member(Base):
     __tablename__ = "members"
@@ -35,6 +49,24 @@ class Member(Base):
     def get_score(self, mode: Mode):
         return Score.of_uuid(self.uuid, mode)
 
+    def set_uuid(self, value: str):
+        self.uuid = value
+        session.commit()
+    
+    def as_whitelist(self):
+        return Whitelist(g_id=self.g_id, m_id=self.m_id)
+
+    def whitelist(self):
+        self.add(self.as_whitelist())
+    def unlist(self):
+        Whitelist.unlist(self.g_id, self.m_id)
+
+    async def fetch_user(self, bot: discord.Bot) -> discord.User:
+        return await bot.fetch_user(self.m_id)
+    
+    def get_name(self) -> str:
+        return get_name(self.uuid)
+
     @classmethod
     def from_id(cls, g_id: int, m_id: int):
         stmt = select(Member).where(
@@ -43,6 +75,7 @@ class Member(Base):
         member = session.scalars(stmt).first()
         if member is None:
             member = cls(g_id=g_id, m_id=m_id)
+            cls.add(member)
 
         return member
 
@@ -68,14 +101,48 @@ class Guild(Base):
         guild = session.scalars(stmt).first()
         if guild is None:
             guild = cls(g_id=g_id)
+            cls.add(guild)
         
         return guild
+
+    def set_update_channel_id(self, value: int):
+        self.update_channel_id = value
+        session.commit()
+    
+    def set_whitelist_channel_id(self, value: int):
+        self.whitelist_channel_id = value
+        session.commit()
+
+    async def fetch_whitelist_channel(self, bot: discord.Bot) -> discord.TextChannel:
+        if self.whitelist_channel_id is None:
+            return None
+
+        return await bot.fetch_channel(self.whitelist_channel_id)
+    async def fetch_update_channel(self, bot: discord.Bot) -> discord.TextChannel:
+        if self.update_channel_id is None:
+            return None
+        
+        return await bot.fetch_channel(self.update_channel_id)
+
 
 class Whitelist(Base):
     __tablename__ = "whitelist"
 
     g_id: Mapped[int] = mapped_column(ForeignKey("guilds.g_id"), primary_key=True)
     m_id: Mapped[int] = mapped_column(primary_key=True)
+
+
+    @classmethod
+    def whitelist(cls, g_id: int, m_id: int):
+        cls.add(cls(g_id=g_id, m_id=m_id))
+    
+    @classmethod
+    def unlist(cls, g_id: int, m_id: int):
+        stmt = select(Whitelist).where(
+            and_(Whitelist.g_id == g_id, Whitelist.m_id == m_id)
+        )
+        cls.delete(session.scalars(stmt).first())
+
 
 class Score(Base):
     __tablename__  = "scores"
@@ -96,6 +163,9 @@ class Score(Base):
             score = cls(uuid=uuid, mode=str(mode))
             cls.add(score)
         return score
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
 
 
 Base.metadata.create_all(engine)

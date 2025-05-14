@@ -2,12 +2,13 @@ import pyplayhd
 
 from discord.ext import commands, tasks
 
+from db import *
+
 class UpdateStats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.mcplayhd: pyplayhd.Client = bot.mcplayhd
 
-        self.updates_data = self.bot.updates
         self.to_update = []
 
         self.fetch_update.start()
@@ -17,18 +18,21 @@ class UpdateStats(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def fetch_update(self):
-        self.to_update = self.updates_data.get_to_update()
+        self.to_update = Score.to_update()
+        print(self.to_update)
     
-    @tasks.loop(seconds=6) # 6 modes, so 6 call to the api
+    @tasks.loop(seconds=1) # 6 modes, so 6 call to the api
     async def update(self):
         if self.to_update == []:
             return
-        uuid = self.to_update.pop()
+        score: Score = self.to_update.pop()
+        if score.update():
+            print("Updated")
 
-        builder_data = BuilderPlayerData(self.bot, uuid)
-        next_time = await builder_data.update()
+        # builder_data = BuilderPlayerData(self.bot, uuid)
+        # next_time = await builder_data.update()
 
-        self.updates_data.update_time(uuid, next_time)
+        # self.updates_data.update_time(uuid, next_time)
 
 
     @fetch_update.before_loop

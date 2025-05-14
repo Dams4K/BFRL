@@ -1,3 +1,4 @@
+import time
 import discord
 
 from typing import Optional
@@ -6,14 +7,21 @@ from sqlalchemy import String
 from sqlalchemy import ForeignKey
 from sqlalchemy import select
 from sqlalchemy import and_
+from sqlalchemy.orm import reconstructor
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.exc import IntegrityError
 
 from .db import engine, session
 
-from pyplayhd import Mode
+from utils.references import References
+from utils.date import next_time
+
+from pyplayhd import *
 from mcapi.player import get_name
+
+mcplayhd = Client(References.MCPLAYHD_TOKEN)
 
 class Base(DeclarativeBase):
     @classmethod
@@ -51,6 +59,7 @@ class Member(Base):
 
     def set_uuid(self, value: str):
         self.uuid = value
+        self.create_scores()
         session.commit()
     
     def as_whitelist(self):
@@ -85,6 +94,12 @@ class Member(Base):
             and_(Member.g_id == g_id, Member.uuid == uuid)
         )
         return session.scalars(stmt).first()
+    
+    def create_scores(self):
+        if self.uuid is None:
+            return
+        for mode in Mode:
+            self.add(Score.of_uuid(self.uuid, mode))
 
 
 
@@ -149,10 +164,19 @@ class Score(Base):
 
     uuid: Mapped[String] = mapped_column(String(32), ForeignKey("members.uuid"), primary_key=True)
     mode: Mapped[str] = mapped_column(primary_key=True)
+
     time_best: Mapped[int] = mapped_column(nullable=True)
-    time_total: Mapped[int] = mapped_column(nullable=True)
+    time_total: Mapped[int] = mapped_column(default=0)
+    games: Mapped[int] = mapped_column(default=0)
+    wins: Mapped[int] = mapped_column(default=0)
+    confirmed: Mapped[bool] = mapped_column(default=False)
+    speedrun_confirmed: Mapped[bool] = mapped_column(default=False)
+
     next_time: Mapped[int] = mapped_column(nullable=False, default=0)
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
+    
     @classmethod
     def of_uuid(cls, uuid: str, mode: Mode):
         stmt = select(Score).where(
@@ -163,9 +187,41 @@ class Score(Base):
             score = cls(uuid=uuid, mode=str(mode))
             cls.add(score)
         return score
+    
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
+    @classmethod
+    def to_update(cls):
+        current_time: int = int(time.time())
+
+        stmt = select(Score).where(Score.next_time <= current_time).limit(60)
+        return session.scalars(stmt).all()
+
+    def update(self) -> bool:
+        builder: BuilderPlayer = mcplayhd.fastbuilder.mode_player_stats(Mode[self.mode.upper()], self.uuid)
+        if builder is None:
+            return False
+        
+        stats: BuilderStats = builder.builder_stats
+        if stats is None:
+            return False
+        
+        time_improved = False
+        if stats.time_best > 0:
+            time_improved = self.time_best != stats.time_best
+            self.time_best = stats.time_best
+        
+        self.time_total = stats.time_total
+        self.games = stats.games
+        self.wins = stats.wins
+        self.confirmed = stats.confirmed
+        self.speedrun_confirmed = stats.speedrun_confirmed
+
+        self.next_time = next_time(int(time.time()), self.mode)
+
+        session.commit()
+
+        return time_improved
+
 
 
 Base.metadata.create_all(engine)

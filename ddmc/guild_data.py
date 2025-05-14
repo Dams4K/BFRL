@@ -11,7 +11,7 @@ from .whitelist_data import *
 from pyplayhd import *
 
 class GuildConfig(Saveable):
-    __slots__ = ("_bot", "_guild_id", "update_channel", "whitelist_channel")
+    __slots__ = ("_bot", "_guild_id", "update_channel", "whitelist_channel", "role_id")
 
     def __init__(self, bot, guild_id):
         self._bot: discord.Bot = bot
@@ -19,8 +19,14 @@ class GuildConfig(Saveable):
         
         self.update_channel: int = -1
         self.whitelist_channel: int = -1
+        self.role_id: int = -1
 
         super().__init__(References.guild_folder(self._guild_id, "config.json"))
+
+
+    @Saveable.update
+    def set_role_id(self, value):
+        self.role_id = value
 
     @Saveable.update
     def set_whitelist_channel(self, value):

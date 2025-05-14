@@ -18,6 +18,11 @@ class Whitelist(commands.Cog):
     
     whitelist = discord.SlashCommandGroup("whitelist")
 
+    @whitelist.command(name="role")
+    async def whitelist_role(self, ctx: BotApplicationContext, role: discord.Role):
+        ctx.guild_config.set_role_id(role.id)
+        await ctx.respond(f"New role required to use the link cmd is now {role.name}")
+
     @whitelist.command(name="add")
     async def whitelist_add(self, ctx: BotApplicationContext, member: discord.Member, name: str) -> None:
         uuid: str = get_uuid(name)

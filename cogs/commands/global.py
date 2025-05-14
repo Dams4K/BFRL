@@ -57,6 +57,14 @@ class Global(commands.Cog):
             await ctx.respond("Error")
             return
 
+        role_id = ctx.guild_config.role_id
+        guild: discord.Guild = ctx.guild
+        role = guild.get_role(role_id)
+
+        if role is not None and not role in ctx.author.roles:
+            await ctx.respond("You can't use this command NOOOOB AHAHAHAHAH")
+            return
+
         md.set_uuid(get_uuid(name))
         await ctx.respond(f"Your discord account is linked to the minecraft account named {name}")
 

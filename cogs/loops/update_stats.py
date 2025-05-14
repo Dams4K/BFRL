@@ -19,20 +19,15 @@ class UpdateStats(commands.Cog):
     @tasks.loop(minutes=1)
     async def fetch_update(self):
         self.to_update = Score.to_update()
-        print(self.to_update)
     
     @tasks.loop(seconds=1) # 6 modes, so 6 call to the api
     async def update(self):
         if self.to_update == []:
             return
         score: Score = self.to_update.pop()
+        old_time: int = score.time_best
         if score.update():
             print("Updated")
-
-        # builder_data = BuilderPlayerData(self.bot, uuid)
-        # next_time = await builder_data.update()
-
-        # self.updates_data.update_time(uuid, next_time)
 
 
     @fetch_update.before_loop

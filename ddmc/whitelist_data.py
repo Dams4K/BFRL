@@ -1,6 +1,8 @@
 from ddm import *
 from utils.references import References
 
+from .member_data import MemberData
+
 class WhitelistData(Saveable):
     __slots__ = ("_guild_id", "listed")
 
@@ -30,3 +32,7 @@ class WhitelistData(Saveable):
             return False
         except (ValueError, KeyError):
             return False
+    
+    def is_listed(self, member_data: MemberData) -> bool:
+        if member_data is None: return False
+        return member_data._member_id in self.listed

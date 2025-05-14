@@ -23,3 +23,22 @@ class MemberData(Saveable):
     @property
     def player_name(self) -> str:
         return get_name(self.uuid)
+
+
+    @classmethod
+    def from_uuid(cls, bot, guild_id, uuid):
+        print(uuid)
+        mf = References.guild_folder(guild_id, "members")
+        members = os.listdir(mf)
+            
+        for member_str in members:
+            smember_id: str = member_str.split(".")[0]
+            if not smember_id.isdecimal():
+                continue
+            
+            member_id = int(smember_id)
+            md = cls(bot, guild_id, member_id)
+            if md.uuid == uuid:
+                return md
+    
+        return None

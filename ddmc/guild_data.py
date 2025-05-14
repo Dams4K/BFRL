@@ -41,6 +41,15 @@ class GuildConfig(Saveable):
         await channel.send(embed=embed, view=WhitelistConfirmation())
     
     async def send_new_pb(self, uuid, mode: Mode, time: int):
+        mb = MemberData.from_uuid(self._bot, self._guild_id, uuid)
+        whitelist = WhitelistData(self._guild_id)
+        if not whitelist.is_listed(mb):
+            print(uuid, "is not listed")
+            return
+
+        if self.update_channel < 0:
+            return
+
         player_name = get_name(uuid)
 
         channel: discord.TextChannel = await self._bot.fetch_channel(self.update_channel)

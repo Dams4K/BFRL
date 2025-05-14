@@ -38,7 +38,7 @@ class Global(commands.Cog):
             return
         
         
-        bpd = BuilderPlayerData(player_uuid)
+        bpd = BuilderPlayerData(self.bot, player_uuid)
 
         if not bpd.file_exist:
             await ctx.respond("No information about this player available for now")

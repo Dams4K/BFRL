@@ -6,11 +6,13 @@ from utils.references import References
 from utils.date import next_time
 
 from .member_data import MemberData
+from .guild_data import GuildConfig
 
 from pyplayhd import *
 
 class BuilderPlayerData(Saveable):
     __slots__ = (
+        "_bot",
         "_uuid",
         "normal", "long",
         "short", "extrashort",
@@ -18,7 +20,8 @@ class BuilderPlayerData(Saveable):
         "onestack"
     )
 
-    def __init__(self, uuid):
+    def __init__(self, bot, uuid):
+        self._bot = bot
         self._uuid = uuid
 
         self.normal = BuilderStatsData(Mode.NORMAL)
@@ -32,14 +35,14 @@ class BuilderPlayerData(Saveable):
         super().__init__(os.path.join(References.FOLDER_DATAS, f"players/{self._uuid}.json"))
     
     @Saveable.update
-    def update(self) -> int:
-        self.normal.update(self._uuid)
-        self.long.update(self._uuid)
-        self.short.update(self._uuid)
-        self.extrashort.update(self._uuid)
-        self.inclined.update(self._uuid)
-        self.inclinedshort.update(self._uuid)
-        self.onestack.update(self._uuid)
+    async def update(self) -> int:
+        await self.normal.update(self._bot, self._uuid)
+        await self.long.update(self._bot, self._uuid)
+        await self.short.update(self._bot, self._uuid)
+        await self.extrashort.update(self._bot, self._uuid)
+        await self.inclined.update(self._bot, self._uuid)
+        await self.inclinedshort.update(self._bot, self._uuid)
+        await self.onestack.update(self._bot, self._uuid)
 
         return next_time(self.short.time_best)
         
@@ -56,8 +59,11 @@ class BuilderStatsData(Data, BuilderStats):
 
         super().__init__(*args, **kwargs)
 
-    def update(self, uuid: str):
+    async def update(self, bot, uuid: str):
         mcplayhd = Client(References.MCPLAYHD_TOKEN)
         if builder_player := mcplayhd.fastbuilder.mode_player_stats(self._mode, uuid):
-            self.time_best = builder_player.builder_stats.time_best
+            new_best = builder_player.builder_stats.time_best
+            if self.time_best != new_best:
+                self.time_best = new_best
+                await GuildConfig.guilds_send_new_pb(bot, uuid, self._mode, new_best)
             self.time_total = builder_player.builder_stats.time_total

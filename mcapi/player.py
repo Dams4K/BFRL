@@ -8,5 +8,5 @@ def get_uuid(name: str) -> str:
     return response.json().get("id", "")
 
 def get_name(uuid: str) -> str:
-    response = requests.get(NAME_FROM_UUID.format(uuid=uuid))
+    response = requests.get(NAME_FROM_UUID.format(uuid=uuid.replace("-", "")))
     return response.json().get("name", "")

@@ -27,8 +27,8 @@ class UpdateStats(commands.Cog):
             return
         uuid = self.to_update.pop()
 
-        builder_data = BuilderPlayerData(uuid)
-        next_time = builder_data.update()
+        builder_data = BuilderPlayerData(self.bot, uuid)
+        next_time = await builder_data.update()
 
         self.updates_data.update_time(uuid, next_time)
 

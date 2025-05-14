@@ -8,6 +8,8 @@ from utils.bot_embeds import InformativeEmbed
 from .member_data import *
 from .whitelist_data import *
 
+from pyplayhd import *
+
 class GuildConfig(Saveable):
     __slots__ = ("_bot", "_guild_id", "update_channel", "whitelist_channel")
 
@@ -30,11 +32,30 @@ class GuildConfig(Saveable):
         
         member: discord.Member = await self._bot.fetch_user(member_data._member_id)
         channel: discord.TextChannel = await self._bot.fetch_channel(self.whitelist_channel)
+        if channel is None:
+            return
 
         embed = InformativeEmbed(title="Whitelist request", description=f"{member.mention} has linked his discord account to `{member_data.player_name}`")
         embed.set_footer(text=str(member_data._member_id))
 
         await channel.send(embed=embed, view=WhitelistConfirmation())
+    
+    async def send_new_pb(self, uuid, mode: Mode, time: int):
+        player_name = get_name(uuid)
+
+        channel: discord.TextChannel = await self._bot.fetch_channel(self.update_channel)
+        if channel is None:
+            return
+        
+        await channel.send(f"New time of `{time/1000}` for {player_name} in {mode}")
+
+    @staticmethod
+    async def guilds_send_new_pb(bot, uuid, mode: Mode, time: int):
+        dirs = os.listdir(References.guilds_folder())
+        for gf in dirs:
+            guild_id = int(gf)
+            guild_config = GuildConfig(bot, guild_id)
+            await guild_config.send_new_pb(uuid, mode, time)
 
 class WhitelistConfirmation(discord.ui.View):
     def __init__(self):

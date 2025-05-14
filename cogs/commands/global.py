@@ -27,7 +27,7 @@ class Global(commands.Cog):
         
         score = Score.of_uuid(player_uuid, mode)
         if score.time_total is None or score.time_total == 0:
-            await ctx.respond("No information about this player available for now")
+            await ctx.respond("No information about this player available for now, Retry later (around 1 minutes)")
             return
         
         calculated_time = display_time(score.time_total//1000)

@@ -14,6 +14,9 @@ default_config = {
   },
   "debug": {
       "guilds": []
+  },
+  "google_sheet": {
+      "id": ""
   }
 }
 
@@ -40,6 +43,8 @@ class _References:
         self.FOLDER_GUILDS = self.config["folders"]["guilds"]
 
         self.DEBUG_GUILDS = self.config["debug"]["guilds"]
+
+        self.SHEET_ID = self.config["google_sheet"]["id"]
 
     def create_config(self):
         self.config = self.fill_config(dict(default_config)) # duplicate and fill the default config

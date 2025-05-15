@@ -4,16 +4,12 @@ import pyplayhd
 
 from utils.references import References
 from utils.bot_contexts import BotApplicationContext
-
-from ddmc import WhitelistConfirmation
-from ddmc import Updates
+from utils.view import *
 
 class BFRL(discord.Bot):
     def __init__(self):
         super().__init__(debug_guilds=References.DEBUG_GUILDS)
         self.mcplayhd: pyplayhd.Client = pyplayhd.Client(References.MCPLAYHD_TOKEN)
-        self.updates = Updates(self)
-        self.updates.load_known()
 
     async def on_ready(self):
         os.system("clear||cls")

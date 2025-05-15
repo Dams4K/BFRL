@@ -148,7 +148,6 @@ class Score(Base):
     
     def as_user_id(self, g_id: int) -> int:
         stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Score.mode == self.mode).where(and_(Member.g_id == g_id, Member.uuid == self.uuid))
-        # print(session.execute(stmt).all())
         return session.scalars(stmt).first()
 
     @staticmethod
@@ -211,7 +210,6 @@ class Score(Base):
 
             guild_id = guild_info[0]
             dguild: Guild = Guild.from_id(guild_id)
-            print("r", guild_id, self.uuid)
             await dguild.send_rank_message(bot, self, old_time, old_rank)
 
     async def send_new_time(self, bot: discord.Bot, old_time: int, old_rank: int):
@@ -221,7 +219,6 @@ class Score(Base):
 
             guild_id = guild_info[0]
             dguild: Guild = Guild.from_id(guild_id)
-            print("t", guild_id)
             await dguild.send_time_message(bot, self, old_time, old_rank)
 
 
@@ -231,8 +228,8 @@ class Guild(Base):
     g_id: Mapped[int] = mapped_column(primary_key=True)
     
     update_channel_id: Mapped[int] = mapped_column(nullable=True)
-    time_message: Mapped[str] = mapped_column(nullable=True, default="New pb of {time}s for {member.mention} in {mode}! `{rank}`")
-    rank_message: Mapped[str] = mapped_column(nullable=True, default="New rank in {mode} for {member.mention}! `{old_rank} → {rank}` with a time of {time}s")
+    time_message: Mapped[str] = mapped_column(nullable=True, default="New pb of {time}s for {member.mention} in {mode}! `#{rank}`")
+    rank_message: Mapped[str] = mapped_column(nullable=True, default="New rank in {mode} for {member.mention}! `#{old_rank} → #{rank}` with a time of {time}s")
 
     whitelist_channel_id: Mapped[int] = mapped_column(nullable=True)
     required_role_id: Mapped[int] = mapped_column(nullable=True)

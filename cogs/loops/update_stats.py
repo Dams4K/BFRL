@@ -31,10 +31,8 @@ class UpdateStats(commands.Cog):
 
         score.update()
         if old_rank != score.get_rank():
-            print("New rank")
             await score.send_new_rank(self.bot, old_time, old_rank)
         elif old_time != score.time_best:
-            print("New time")
             await score.send_new_time(self.bot, old_time, old_rank)
 
 

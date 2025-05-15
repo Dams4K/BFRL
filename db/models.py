@@ -238,8 +238,8 @@ class Guild(Base):
     g_id: Mapped[int] = mapped_column(primary_key=True)
     
     update_channel_id: Mapped[int] = mapped_column(nullable=True)
-    time_message: Mapped[str] = mapped_column(nullable=True, default="New pb of {time}s for {member.mention} in {mode}! `#{rank}`")
-    rank_message: Mapped[str] = mapped_column(nullable=True, default="New rank in {mode} for {member.mention}! `#{old_rank} → #{rank}` with a time of {time}s")
+    time_message: Mapped[str] = mapped_column(nullable=True, default="New pb of {time:.3f}s for {member.mention} in {mode}! `#{rank}`")
+    rank_message: Mapped[str] = mapped_column(nullable=True, default="New rank in {mode} for {member.mention}! `#{old_rank} → #{rank}` with a time of {time:.3f}s")
 
     whitelist_channel_id: Mapped[int] = mapped_column(nullable=True)
     required_role_id: Mapped[int] = mapped_column(nullable=True)
@@ -310,8 +310,8 @@ class Guild(Base):
         
         d = FormatDict({
             "mode": str(score.mode),
-            "time": score.time_best,
-            "old_time": old_time,
+            "time": score.time_best/1000,
+            "old_time": old_time/1000,
             "rank": score.get_rank(),
             "old_rank": old_rank,
             "member": user

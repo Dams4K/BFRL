@@ -31,6 +31,11 @@ class UpdateStats(commands.Cog):
         old_rank = score.get_rank()
 
         score.update()
+
+        if old_time is None:
+            # First time we got the data, we don't want to send message
+            return
+
         if old_rank != score.get_rank():
             await score.send_new_rank(self.bot, old_time, old_rank)
         elif old_time != score.time_best:

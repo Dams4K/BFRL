@@ -35,6 +35,11 @@ class Global(commands.Cog):
 
     @discord.slash_command()
     async def link(self, ctx: BotApplicationContext, name: str):
+        if role := ctx.dguild.get_required_role(self.bot):
+            if not role in ctx.author.roles:
+                await ctx.respond("You can't use this command")
+                return
+
         dm = ctx.dmember
         dm.unlist()
         dm.set_uuid(get_uuid(name))

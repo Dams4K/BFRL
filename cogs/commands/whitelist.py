@@ -31,7 +31,9 @@ class Whitelist(commands.Cog):
             await ctx.respond("Incorrect minecraft name")
             return
 
-        Member.from_id(ctx.guild.id, member.id).whitelist()
+        dm = Member.from_id(ctx.guild.id, member.id)
+        dm.set_uuid(uuid)
+        dm.whitelist()
 
         await ctx.respond(f"{member.display_name} is now whitelisted")
 

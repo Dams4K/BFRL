@@ -36,7 +36,7 @@ class Whitelist(commands.Cog):
         member: Member = None
         if not member is None:
             member = Member.from_id(ctx.guild.id, member.id)
-        else:
+        if uuid := get_uuid(name):
             member = Member.from_uuid(ctx.guild.id, uuid)
 
         if member is None:

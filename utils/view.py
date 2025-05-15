@@ -2,9 +2,14 @@ import discord
 
 from db import *
 
+from utils.checks import i_is_administrator
+
 class WhitelistConfirmation(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=None)
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return i_is_administrator(interaction)
 
     @discord.ui.button(label="Add to whitelist", custom_id="add", style=discord.ButtonStyle.green)
     async def add_button(self, button, interaction: discord.Interaction):

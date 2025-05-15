@@ -59,6 +59,22 @@ class UpdateSheet(commands.Cog):
     @tasks.loop(minutes=4)
     async def update_normal(self):
         self.update_sheet(Mode.NORMAL, normal_worksheet)
+    
+    @tasks.loop(minutes=6)
+    async def update_long(self):
+        self.update_sheet(Mode.LONG, long_worksheet)
+
+    @tasks.loop(minutes=6)
+    async def update_inclined(self):
+        self.update_sheet(Mode.INCLINED, inclined_worksheet)
+
+    @tasks.loop(minutes=4)
+    async def update_inclinedshort(self):
+        self.update_sheet(Mode.INCLINEDSHORT, inclinedshort_worksheet)
+
+    @tasks.loop(minutes=10)
+    async def update_onestack(self):
+        self.update_sheet(Mode.ONESTACK, onestack_worksheet)
 
     @update_short.before_loop
     async def before_update_short(self):
@@ -67,6 +83,10 @@ class UpdateSheet(commands.Cog):
         # Start others
         self.update_extrashort.start()
         self.update_normal.start()
+        self.update_long.start()
+        self.update_inclined.start()
+        self.update_inclinedshort.start()
+        self.update_onestack.start()
 
 def setup(bot):
     bot.add_cog(UpdateSheet(bot))

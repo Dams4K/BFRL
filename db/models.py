@@ -108,6 +108,8 @@ class Score(Base):
     __tablename__  = "scores"
 
     uuid: Mapped[String] = mapped_column(String(32), ForeignKey("members.uuid"), primary_key=True)
+    name: Mapped[String] = mapped_column(nullable=True)
+    group: Mapped[String] = mapped_column(nullable=True)
     mode: Mapped[str] = mapped_column(primary_key=True)
 
     time_best: Mapped[int] = mapped_column(nullable=True)
@@ -139,6 +141,10 @@ class Score(Base):
 
         self.next_time = next_time(int(time.time()), self.mode)
 
+        if player_info := builder.player_info:
+            self.name = player_info.name
+            self.group = player_info.group
+
         session.commit()
 
     def __repr__(self):
@@ -147,6 +153,12 @@ class Score(Base):
     def as_user_id(self, g_id: int) -> int:
         stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Score.mode == self.mode).where(and_(Member.g_id == g_id, Member.uuid == self.uuid))
         return session.scalars(stmt).first()
+
+    def get_name(self):
+        if self.name is None:
+            self.name = get_name(self.uuid)
+            session.commit()
+        return self.name or "Unknown"
 
     @staticmethod
     def of_uuid(uuid: str, mode: Mode):

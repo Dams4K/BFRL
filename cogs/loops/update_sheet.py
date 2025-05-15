@@ -41,7 +41,7 @@ class UpdateSheet(commands.Cog):
                 continue
 
             ranking_cell.value = f"#{rank}"
-            pseudo_cell.value = get_name(score.uuid) or score.uuid
+            pseudo_cell.value = score.get_name()
             score_cell.value = "{:.3f}".format(score.time_best/1000)
 
         

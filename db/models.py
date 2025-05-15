@@ -108,8 +108,8 @@ class Score(Base):
     __tablename__  = "scores"
 
     uuid: Mapped[String] = mapped_column(String(32), ForeignKey("members.uuid"), primary_key=True)
-    name: Mapped[String] = mapped_column(nullable=True)
-    group: Mapped[String] = mapped_column(nullable=True)
+    name: Mapped[str] = mapped_column(nullable=True)
+    group: Mapped[str] = mapped_column(nullable=True)
     mode: Mapped[str] = mapped_column(primary_key=True)
 
     time_best: Mapped[int] = mapped_column(nullable=True)

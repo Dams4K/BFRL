@@ -17,7 +17,7 @@ class Whitelist(commands.Cog):
     def cog_check(self, ctx: BotApplicationContext):
         return is_administrator(ctx)
     
-    whitelist = discord.SlashCommandGroup("whitelist")
+    whitelist = discord.SlashCommandGroup("whitelist", default_member_permissions=discord.Permissions(administrator=True))
 
     @whitelist.command(name="add")
     async def whitelist_add(self, ctx: BotApplicationContext, member: discord.Member, name: str) -> None:
@@ -47,11 +47,5 @@ class Whitelist(commands.Cog):
         await ctx.respond("Member unlisted")
     
     
-    @whitelist.command(name="channel")
-    async def whitelist_channel(self, ctx: BotApplicationContext, channel: discord.TextChannel):
-        ctx.dguild.set_whitelist_channel_id(channel.id)
-        await ctx.respond(f"New self-whitelist is now {channel.mention}")
-
-
 def setup(bot):
     bot.add_cog(Whitelist(bot))

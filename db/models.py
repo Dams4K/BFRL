@@ -1,5 +1,6 @@
 import time
 import discord
+import string
 
 from typing import Optional
 
@@ -19,6 +20,7 @@ from .db import engine, session
 
 from utils.references import References
 from utils.date import next_time
+from utils.format import FormatDict
 
 from pyplayhd import *
 from mcapi.player import get_name
@@ -104,63 +106,6 @@ class Member(Base):
             self.add(Score.of_uuid(self.uuid, mode))
 
 
-
-class Guild(Base):
-    __tablename__ = "guilds"
-
-    g_id: Mapped[int] = mapped_column(primary_key=True)
-    update_channel_id: Mapped[int] = mapped_column(nullable=True)
-    whitelist_channel_id: Mapped[int] = mapped_column(nullable=True)
-
-    @classmethod
-    def from_id(cls, g_id: int):
-        stmt = select(Guild).where(Guild.g_id == g_id)
-        guild = session.scalars(stmt).first()
-        if guild is None:
-            guild = cls(g_id=g_id)
-            cls.add(guild)
-        
-        return guild
-
-    def set_update_channel_id(self, value: int):
-        self.update_channel_id = value
-        session.commit()
-    
-    def set_whitelist_channel_id(self, value: int):
-        self.whitelist_channel_id = value
-        session.commit()
-
-    async def fetch_whitelist_channel(self, bot: discord.Bot) -> discord.TextChannel:
-        if self.whitelist_channel_id is None:
-            return None
-
-        return await bot.fetch_channel(self.whitelist_channel_id)
-    async def fetch_update_channel(self, bot: discord.Bot) -> discord.TextChannel:
-        if self.update_channel_id is None:
-            return None
-        
-        return await bot.fetch_channel(self.update_channel_id)
-
-
-class Whitelist(Base):
-    __tablename__ = "whitelist"
-
-    g_id: Mapped[int] = mapped_column(ForeignKey("guilds.g_id"), primary_key=True)
-    m_id: Mapped[int] = mapped_column(primary_key=True)
-
-
-    @classmethod
-    def whitelist(cls, g_id: int, m_id: int):
-        cls.add(cls(g_id=g_id, m_id=m_id))
-    
-    @classmethod
-    def unlist(cls, g_id: int, m_id: int):
-        stmt = select(Whitelist).where(
-            and_(Whitelist.g_id == g_id, Whitelist.m_id == m_id)
-        )
-        cls.delete(session.scalars(stmt).first())
-
-
 class Score(Base):
     __tablename__  = "scores"
 
@@ -176,18 +121,16 @@ class Score(Base):
 
     next_time: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    def update(self) -> bool:
+    def update(self):
         builder: BuilderPlayer = mcplayhd.fastbuilder.mode_player_stats(Mode[self.mode.upper()], self.uuid)
         if builder is None:
-            return False
+            return
         
         stats: BuilderStats = builder.builder_stats
         if stats is None:
-            return False
+            return
         
-        time_improved = False
         if stats.time_best > 0:
-            time_improved = self.time_best != stats.time_best
             self.time_best = stats.time_best
         
         self.time_total = stats.time_total
@@ -200,11 +143,13 @@ class Score(Base):
 
         session.commit()
 
-        return time_improved
-
     def __repr__(self):
         return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
     
+    def as_user_id(self, g_id: int) -> int:
+        stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Member.g_id == g_id)
+        return session.scalars(stmt).first()
+
     @staticmethod
     def of_uuid(uuid: str, mode: Mode):
         stmt = select(Score).where(
@@ -249,6 +194,159 @@ class Score(Base):
             if score.uuid == self.uuid:
                 return rank
         return None
+    
+    def get_affected_guilds(self):
+        stmt = (select(Guild.g_id)
+                .join(Member, Member.uuid == self.uuid)
+                .join(Whitelist, Whitelist.g_id == Member.g_id)
+        )
+        return session.execute(stmt).all()
+
+    async def send_new_rank(self, bot: discord.Bot, old_time: int, old_rank: int):
+        for guild_info in self.get_affected_guilds():
+            if len(guild_info) == 0:
+                continue
+
+            guild_id = guild_info[0]
+            dguild: Guild = Guild.from_id(guild_id)
+            print("r", guild_id)
+            await dguild.send_rank_message(bot, self, old_time, old_rank)
+
+    async def send_new_time(self, bot: discord.Bot, old_time: int, old_rank: int):
+        for guild_info in self.get_affected_guilds():
+            if len(guild_info) == 0:
+                continue
+
+            guild_id = guild_info[0]
+            dguild: Guild = Guild.from_id(guild_id)
+            print("t", guild_id)
+            await dguild.send_time_message(bot, self, old_time, old_rank)
+
+
+class Guild(Base):
+    __tablename__ = "guilds"
+
+    g_id: Mapped[int] = mapped_column(primary_key=True)
+    
+    update_channel_id: Mapped[int] = mapped_column(nullable=True)
+    time_message: Mapped[str] = mapped_column(nullable=True, default="New pb of {time}s for {member.mention} in {mode}! `{rank}`")
+    rank_message: Mapped[str] = mapped_column(nullable=True, default="New rank in {mode} for {member.mention}! `{old_rank} → {rank}` with a time of {time}s")
+
+    whitelist_channel_id: Mapped[int] = mapped_column(nullable=True)
+    required_role_id: Mapped[int] = mapped_column(nullable=True)
+
+    @classmethod
+    def from_id(cls, g_id: int):
+        stmt = select(Guild).where(Guild.g_id == g_id)
+        guild = session.scalars(stmt).first()
+        if guild is None:
+            guild = cls(g_id=g_id)
+            cls.add(guild)
+        
+        return guild
+
+    def set_update_channel(self, channel: discord.TextChannel):
+        if channel is None:
+            return
+
+        self.update_channel_id = channel.id
+        session.commit()
+    
+    def set_whitelist_channel(self, channel: discord.TextChannel):
+        if channel is None:
+            return
+
+        self.whitelist_channel_id = channel.id
+        session.commit()
+
+    def set_link_required_role(self, role: discord.Role):
+        if role is None:
+            return
+
+        self.required_role_id = role.id
+        session.commit()
+
+    def set_rank_message(self, message):
+        self.rank_message = message
+        session.commit()
+    def set_time_message(self, message):
+        self.time_message = message
+        session.commit()
+
+    async def fetch_whitelist_channel(self, bot: discord.Bot) -> discord.TextChannel:
+        if self.whitelist_channel_id is None:
+            return None
+
+        return await bot.fetch_channel(self.whitelist_channel_id)
+    async def fetch_update_channel(self, bot: discord.Bot) -> discord.TextChannel:
+        if self.update_channel_id is None:
+            return None
+        
+        return await bot.fetch_channel(self.update_channel_id)
+    
+    def get_required_role(self, bot: discord.Bot) -> discord.Role:
+        if self.required_role_id is None:
+            return None
+        
+        return bot.get_guild(self.g_id).get_role(self.required_role_id)
+    
+    async def send_time_message(self, bot: discord.Bot, score: Score, old_time: int, old_rank: int):
+        user_id = score.as_user_id(self.g_id)
+        user: discord.User = await bot.fetch_user(user_id)
+        d = FormatDict({
+            "mode": str(score.mode),
+            "time": score.time_best,
+            "old_time": old_time,
+            "rank": score.get_rank(),
+            "old_rank": old_rank,
+            "member": user
+        })
+        formatter = string.Formatter()
+        message = formatter.vformat(self.time_message, (), d)
+        await self.send_update_message(bot, message)
+        
+    
+    async def send_rank_message(self, bot: discord.Bot, score: Score, old_time: int, old_rank: int):
+        user_id = score.as_user_id(self.g_id)
+        user: discord.User = await bot.fetch_user(user_id)
+        d = FormatDict({
+            "mode": str(score.mode),
+            "time": score.time_best,
+            "old_time": old_time,
+            "rank": score.get_rank(),
+            "old_rank": old_rank,
+            "member": user
+        })
+        formatter = string.Formatter()
+        message = formatter.vformat(self.rank_message, (), d)
+        await self.send_update_message(bot, message)
+    
+    async def send_update_message(self, bot: discord.Bot, message: str):
+        update_channel: discord.TextChannel = await self.fetch_update_channel(bot)
+        if update_channel is None:
+            return
+        await update_channel.send(message)
+
+
+
+class Whitelist(Base):
+    __tablename__ = "whitelist"
+
+    g_id: Mapped[int] = mapped_column(ForeignKey("guilds.g_id"), primary_key=True)
+    m_id: Mapped[int] = mapped_column(primary_key=True)
+
+
+    @classmethod
+    def whitelist(cls, g_id: int, m_id: int):
+        cls.add(cls(g_id=g_id, m_id=m_id))
+    
+    @classmethod
+    def unlist(cls, g_id: int, m_id: int):
+        stmt = select(Whitelist).where(
+            and_(Whitelist.g_id == g_id, Whitelist.m_id == m_id)
+        )
+        cls.delete(session.scalars(stmt).first())
+
 
 
 Base.metadata.create_all(engine)

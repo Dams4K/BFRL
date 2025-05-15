@@ -27,10 +27,14 @@ class UpdateStats(commands.Cog):
         score: Score = self.to_update.pop()
         old_time: int = score.time_best
         old_rank = score.get_rank()
-        if score.update():
-            print("Updated")
-        # print(Score.get_leaderboard(Mode.SHORT))
-        print(score.uuid, score.mode, score.get_rank())
+
+        score.update()
+        if old_rank != score.get_rank():
+            print("New rank")
+            await score.send_new_rank(self.bot, old_time, old_rank)
+        elif old_time != score.time_best:
+            print("New time")
+            await score.send_new_time(self.bot, old_time, old_rank)
 
 
     @fetch_update.before_loop

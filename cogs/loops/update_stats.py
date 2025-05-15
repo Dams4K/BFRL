@@ -16,6 +16,7 @@ class UpdateStats(commands.Cog):
 
     def cog_unload(self):
         self.fetch_update.cancel()
+        self.update.cancel()
 
     @tasks.loop(minutes=1)
     async def fetch_update(self):

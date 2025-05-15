@@ -10,8 +10,6 @@ from sqlalchemy import asc
 from sqlalchemy import select
 from sqlalchemy import and_
 from sqlalchemy import func
-from sqlalchemy.orm import reconstructor
-from sqlalchemy.orm import aliased
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.exc import IntegrityError
@@ -171,9 +169,9 @@ class Score(Base):
 
 
     @staticmethod
-    def get_leaderboard_query(mode: Mode):
+    def get_leaderboard_query(mode: Mode, guild_id: int = 1017489023842930700): #TODO: this is hardcoded because i have only one sheet manually created
         sub_query = session.query(Score)
-        sub_query = sub_query.join(Member, Score.uuid == Member.uuid)
+        sub_query = sub_query.join(Member, and_(Score.uuid == Member.uuid, Member.g_id == guild_id))
         sub_query = sub_query.join(Whitelist, and_(Whitelist.g_id == Member.g_id, Whitelist.m_id == Member.m_id))
         sub_query = sub_query.filter(Score.mode == str(mode))
         sub_query = sub_query.filter(Score.time_best != None)
@@ -184,8 +182,8 @@ class Score(Base):
 
 
     @staticmethod
-    def get_leaderboard(mode: Mode):
-        return session.execute(Score.get_leaderboard_query(mode)).all()
+    def get_leaderboard(mode: Mode, guild_id: int = 1017489023842930700):
+        return session.execute(Score.get_leaderboard_query(mode, guild_id)).all()
     
     def get_rank(self) -> int | None:
         # I'd love using a filter, but row_number keep being updated and always return 1, and because i didn't find any information online, i'm force to do this shit

@@ -26,8 +26,11 @@ class UpdateStats(commands.Cog):
             return
         score: Score = self.to_update.pop()
         old_time: int = score.time_best
+        old_rank = score.get_rank()
         if score.update():
             print("Updated")
+        # print(Score.get_leaderboard(Mode.SHORT))
+        print(score.uuid, score.mode, score.get_rank())
 
 
     @fetch_update.before_loop

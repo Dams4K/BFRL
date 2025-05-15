@@ -5,8 +5,10 @@ from typing import Optional
 
 from sqlalchemy import String
 from sqlalchemy import ForeignKey
+from sqlalchemy import asc
 from sqlalchemy import select
 from sqlalchemy import and_
+from sqlalchemy import func
 from sqlalchemy.orm import reconstructor
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm import DeclarativeBase
@@ -174,28 +176,6 @@ class Score(Base):
 
     next_time: Mapped[int] = mapped_column(nullable=False, default=0)
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
-    
-    @classmethod
-    def of_uuid(cls, uuid: str, mode: Mode):
-        stmt = select(Score).where(
-            and_(Score.uuid == uuid, Score.mode == str(mode))
-        )
-        score = session.scalars(stmt).first()
-        if score is None:
-            score = cls(uuid=uuid, mode=str(mode))
-            cls.add(score)
-        return score
-    
-
-    @classmethod
-    def to_update(cls):
-        current_time: int = int(time.time())
-
-        stmt = select(Score).where(Score.next_time <= current_time).limit(60)
-        return session.scalars(stmt).all()
-
     def update(self) -> bool:
         builder: BuilderPlayer = mcplayhd.fastbuilder.mode_player_stats(Mode[self.mode.upper()], self.uuid)
         if builder is None:
@@ -222,6 +202,53 @@ class Score(Base):
 
         return time_improved
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
+    
+    @staticmethod
+    def of_uuid(uuid: str, mode: Mode):
+        stmt = select(Score).where(
+            and_(Score.uuid == uuid, Score.mode == str(mode))
+        )
+        score = session.scalars(stmt).first()
+        if score is None:
+            score = Score(uuid=uuid, mode=str(mode))
+            Score.add(score)
+        return score
+    
+
+    @staticmethod
+    def to_update():
+        current_time: int = int(time.time())
+
+        stmt = select(Score).where(Score.next_time <= current_time).order_by(asc(Score.next_time)).limit(60)
+        return session.scalars(stmt).all()
+
+
+    @staticmethod
+    def get_leaderboard_query(mode: Mode):
+        sub_query = session.query(Score)
+        sub_query = sub_query.join(Member, Score.uuid == Member.uuid)
+        sub_query = sub_query.join(Whitelist, and_(Whitelist.g_id == Member.g_id, Whitelist.m_id == Member.m_id))
+        sub_query = sub_query.filter(Score.mode == str(mode))
+        sub_query = sub_query.filter(Score.time_best != None)
+
+        row_number = func.row_number().over(order_by=asc(Score.time_best)).label("rank")
+        sub_query = sub_query.add_column(row_number)
+        return sub_query
+
+
+    @staticmethod
+    def get_leaderboard(mode: Mode):
+        return session.execute(Score.get_leaderboard_query(mode)).all()
+    
+    def get_rank(self) -> int | None:
+        # I'd love using a filter, but row_number keep being updated and always return 1, and because i didn't find any information online, i'm force to do this shit
+        lb = Score.get_leaderboard(self.mode)
+        for score, rank in lb:
+            if score.uuid == self.uuid:
+                return rank
+        return None
 
 
 Base.metadata.create_all(engine)

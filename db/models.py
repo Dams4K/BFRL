@@ -116,6 +116,7 @@ class Score(Base):
     time_total: Mapped[int] = mapped_column(default=0)
     games: Mapped[int] = mapped_column(default=0)
     wins: Mapped[int] = mapped_column(default=0)
+    blocks: Mapped[int] = mapped_column(default=0)
     confirmed: Mapped[bool] = mapped_column(default=False)
     speedrun_confirmed: Mapped[bool] = mapped_column(default=False)
 
@@ -136,6 +137,7 @@ class Score(Base):
         self.time_total = stats.time_total
         self.games = stats.games
         self.wins = stats.wins
+        self.blocks = stats.blocks
         self.confirmed = stats.confirmed
         self.speedrun_confirmed = stats.speedrun_confirmed
 

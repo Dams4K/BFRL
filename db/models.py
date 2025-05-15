@@ -147,7 +147,8 @@ class Score(Base):
         return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
     
     def as_user_id(self, g_id: int) -> int:
-        stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Member.g_id == g_id)
+        stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Score.mode == self.mode).where(and_(Member.g_id == g_id, Member.uuid == self.uuid))
+        # print(session.execute(stmt).all())
         return session.scalars(stmt).first()
 
     @staticmethod
@@ -199,6 +200,7 @@ class Score(Base):
         stmt = (select(Guild.g_id)
                 .join(Member, Member.uuid == self.uuid)
                 .join(Whitelist, Whitelist.g_id == Member.g_id)
+                .group_by(Guild.g_id)
         )
         return session.execute(stmt).all()
 
@@ -209,7 +211,7 @@ class Score(Base):
 
             guild_id = guild_info[0]
             dguild: Guild = Guild.from_id(guild_id)
-            print("r", guild_id)
+            print("r", guild_id, self.uuid)
             await dguild.send_rank_message(bot, self, old_time, old_rank)
 
     async def send_new_time(self, bot: discord.Bot, old_time: int, old_rank: int):
@@ -292,7 +294,13 @@ class Guild(Base):
     
     async def send_time_message(self, bot: discord.Bot, score: Score, old_time: int, old_rank: int):
         user_id = score.as_user_id(self.g_id)
+        if user_id is None:
+            return
+
         user: discord.User = await bot.fetch_user(user_id)
+        if user is None:
+            return
+        
         d = FormatDict({
             "mode": str(score.mode),
             "time": score.time_best,
@@ -308,7 +316,13 @@ class Guild(Base):
     
     async def send_rank_message(self, bot: discord.Bot, score: Score, old_time: int, old_rank: int):
         user_id = score.as_user_id(self.g_id)
+        if user_id is None:
+            return
+
         user: discord.User = await bot.fetch_user(user_id)
+        if user is None:
+            return
+
         d = FormatDict({
             "mode": str(score.mode),
             "time": score.time_best,

@@ -13,6 +13,7 @@ class UpdateStats(commands.Cog):
 
         self.fetch_update.start()
 
+
     def cog_unload(self):
         self.fetch_update.cancel()
 

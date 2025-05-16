@@ -383,8 +383,8 @@ class Guild(Base):
         d = FormatDict({
             "mode": str(score.mode),
             "time": score.time_best,
-            "old_time": old_time,
-            "rank": score.get_rank(),
+            "old_time": old_time/1000,
+            "rank": score.get_rank()/1000,
             "old_rank": old_rank,
             "member": user
         })

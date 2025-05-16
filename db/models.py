@@ -10,6 +10,7 @@ from sqlalchemy import asc
 from sqlalchemy import select
 from sqlalchemy import and_
 from sqlalchemy import func
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.exc import IntegrityError
@@ -150,7 +151,7 @@ class Score(Base):
         session.commit()
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
+        return f"<{self.__class__.__name__}_{self.mode} uuid={self.uuid} time_best={self.time_best} time_total={self.time_total} next_time={self.next_time}>"
     
     def as_user_id(self, g_id: int) -> int:
         stmt = select(Member.m_id).join(Score, Score.uuid == Member.uuid).where(Score.mode == self.mode).where(and_(Member.g_id == g_id, Member.uuid == self.uuid))
@@ -193,6 +194,40 @@ class Score(Base):
         row_number = func.row_number().over(order_by=asc(Score.time_best)).label("rank")
         sub_query = sub_query.add_column(row_number)
         return sub_query
+
+
+    @staticmethod
+    def global_leaderboard(guild_id: int = 1017489023842930700):
+        sub_query = session.query(Score.uuid, Score.time_best)
+        sub_query = sub_query.join(Member, and_(Score.uuid == Member.uuid, Member.g_id == guild_id))
+        sub_query = sub_query.join(Whitelist, and_(Whitelist.g_id == Member.g_id, Whitelist.m_id == Member.m_id))
+        sub_query = sub_query.filter(Score.time_best != None)
+
+        normal_query = (sub_query.filter(Score.mode == str(Mode.NORMAL))).subquery("normal_score")
+        short_query = (sub_query.filter(Score.mode == str(Mode.SHORT))).subquery("short_score")
+
+        col_global_time = (normal_query.c.time_best/2 + short_query.c.time_best).label("global_time")
+        query = session.query(normal_query.c.uuid, col_global_time, normal_query.c.time_best, short_query.c.time_best)
+        query = query.join(short_query, normal_query.c.uuid == short_query.c.uuid)
+        query = query.filter(col_global_time != None)
+        query = query.order_by(asc(col_global_time))
+
+        lb = session.execute(query).all()
+
+        ranked_lb = []
+        rank = 0
+        previous_time = -1
+
+        for i in range(len(lb)):
+            uuid, global_time, normal_time, short_time = lb[i]
+
+            if global_time != previous_time:
+                rank = i+1
+                previous_time = global_time
+            ranked_lb.append((rank, uuid, global_time, normal_time, short_time))
+
+        return ranked_lb
+
 
 
     @staticmethod

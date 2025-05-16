@@ -41,7 +41,7 @@ class UpdateSheet(commands.Cog):
             pseudo_cell =   cells[3*i+1]
             score_cell =    cells[3*i+2]
 
-            score, rank = lb[i]
+            rank, score = lb[i]
             if score is None or rank is None:
                 continue
 

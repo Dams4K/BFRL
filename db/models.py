@@ -185,15 +185,14 @@ class Score(Base):
 
     @staticmethod
     def get_leaderboard_query(mode: Mode, guild_id: int = 1017489023842930700): #TODO: this is hardcoded because i have only one sheet manually created
-        sub_query = session.query(Score)
-        sub_query = sub_query.join(Member, and_(Score.uuid == Member.uuid, Member.g_id == guild_id))
-        sub_query = sub_query.join(Whitelist, and_(Whitelist.g_id == Member.g_id, Whitelist.m_id == Member.m_id))
-        sub_query = sub_query.filter(Score.mode == str(mode))
-        sub_query = sub_query.filter(Score.time_best != None)
+        query = session.query(Score)
+        query = query.join(Member, and_(Score.uuid == Member.uuid, Member.g_id == guild_id))
+        query = query.join(Whitelist, and_(Whitelist.g_id == Member.g_id, Whitelist.m_id == Member.m_id))
+        query = query.filter(Score.mode == str(mode))
+        query = query.filter(Score.time_best != None)
+        query = query.order_by(asc(Score.time_best))
 
-        row_number = func.row_number().over(order_by=asc(Score.time_best)).label("rank")
-        sub_query = sub_query.add_column(row_number)
-        return sub_query
+        return query
 
 
     @staticmethod
@@ -232,12 +231,26 @@ class Score(Base):
 
     @staticmethod
     def get_leaderboard(mode: Mode, guild_id: int = 1017489023842930700):
-        return session.execute(Score.get_leaderboard_query(mode, guild_id)).all()
+        lb = session.execute(Score.get_leaderboard_query(mode, guild_id)).all()
+
+        ranked_lb = []
+        rank = 0
+        previous_time = -1
+
+        for i in range(len(lb)):
+            score: Score = lb[i][0]
+
+            if score.time_best != previous_time:
+                rank = i+1
+                previous_time = score.time_best
+            ranked_lb.append((rank, score))
+
+        return ranked_lb
     
     def get_rank(self) -> int | None:
         # I'd love using a filter, but row_number keep being updated and always return 1, and because i didn't find any information online, i'm force to do this shit
         lb = Score.get_leaderboard(self.mode)
-        for score, rank in lb:
+        for rank, score in lb:
             if score.uuid == self.uuid:
                 return rank
         return None

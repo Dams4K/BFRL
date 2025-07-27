@@ -22,7 +22,7 @@ class UpdateStats(commands.Cog):
     async def fetch_update(self):
         self.to_update = Score.to_update()
     
-    @tasks.loop(seconds=1) # 6 modes, so 6 call to the api
+    @tasks.loop(seconds=2) # 6 modes, so 6 call to the api
     async def update(self):
         if self.to_update == []:
             return

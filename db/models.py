@@ -126,6 +126,7 @@ class Score(Base):
     def update(self):
         builder: BuilderPlayer = mcplayhd.fastbuilder.mode_player_stats(Mode[self.mode.upper()], self.uuid)
         if builder is None:
+            self.next_time = int(time.time()) + 60*60*24*2 # We wait 2d and we retry
             return
         
         stats: BuilderStats = builder.builder_stats
